@@ -122,5 +122,4 @@ minetest.register_node("tigris_thermal:fire_active", tn{
     groups = {not_in_creative_inventory = 1},
 })
 
-tigris.thermal.register_heat_source("default:furnace_active")
 tigris.thermal.register_heat_source("tigris_thermal:fire_active")

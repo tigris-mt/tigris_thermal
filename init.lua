@@ -124,13 +124,15 @@ end
 
 m.register_heat_source("default:lava_source")
 m.register_heat_source("default:lava_flowing")
+tigris.thermal.register_heat_source("default:furnace_active")
+
 if rawget(_G, "fire") then
     m.register_heat_source("fire:basic_flame")
     m.register_heat_source("fire:permanent_flame")
 end
 
 tigris.include("player.lua")
-tigris.include("furnace.lua")
+tigris.include("fire.lua")
 
 -- Register default nodes.
 
