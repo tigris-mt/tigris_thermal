@@ -2,9 +2,9 @@
 local factor = tonumber(minetest.settings:get("tigris.thermal.fire_factor")) or 10
 
 local fs = smartfs.create("tigris_thermal:fire", function(state)
-    state:size(8, 6)
+    state:size(8, 5)
     state:inventory(0, 0, 1, 1, "fuel"):usePosition(state.location.pos)
-    state:inventory(0, 2, 8, 4, "main")
+    state:inventory(0, 1, 8, 4, "main")
 
     state:element("code", {name = "listring", code = "listring[context;fuel]listring[current_player;main]"})
 
@@ -27,8 +27,22 @@ local function tn(d)
     local a = {
         description = "Heating Fire",
 
-        groups = {snappy = 3, not_in_creative_inventory = d.groups and d.groups.not_in_creative_inventory},
-        sounds = default.node_sound_wood_defaults(),
+        tiles = {"default_cobble.png^default_flint.png"},
+
+        drawtype = "nodebox",
+        node_box = {
+            type = "fixed",
+            fixed = {
+                {-8/16, -8/16, -8/16, 8/16, -4/16, 8/16},
+                {-8/16, -8/16, -8/16, -4/16, 8/16, 8/16},
+                {4/16, -8/16, -8/16, 8/16, 8/16, 8/16},
+                {-4/16, -8/16, -8/16, 4/16, 8/16, -4/16},
+                {-4/16, -8/16, 8/16, 4/16, 8/16, 4/16},
+            },
+        },
+
+        groups = {cracky = 2, not_in_creative_inventory = d.groups and d.groups.not_in_creative_inventory},
+        sounds = default.node_sound_stone_defaults(),
         is_ground_content = false,
 
         drop = "tigris_thermal:fire",
@@ -55,12 +69,15 @@ local function tn(d)
         end,
 
         on_timer = function(pos, dtime)
+            local top = vector.add(pos, vector.new(0, 1, 0))
+
             local meta = minetest.get_meta(pos)
             local inv = meta:get_inventory()
             local fuel_list = inv:get_list("fuel")
 
             local remaining = meta:get_float("remaining")
             local total = meta:get_int("total")
+            local percent = meta:get_int("progress")
 
             if remaining <= 0 then
                 local f, a = minetest.get_craft_result({method = "fuel", width = 1, items = fuel_list})
@@ -71,32 +88,56 @@ local function tn(d)
                 end
             end
 
+            local clear = ((minetest.get_node(top).name == "air") or
+                (minetest.get_node(top).name == "fire:permanent_flame"))
+
+            local function update()
+                meta:set_int("total", total)
+                meta:set_float("remaining", remaining)
+                meta:set_int("progress", percent)
+                fs:attach_to_node(pos)
+            end
+
             if remaining > 0 then
+                if not clear then
+                    update()
+                    meta:set_string("infotext", "Fire blocked!")
+                    return true
+                end
+
                 remaining = remaining - (dtime / factor)
             end
 
-            local percent = math.floor(math.max(0, remaining) / math.max(1, total) * 100)
+            percent = math.floor(math.max(0, remaining) / math.max(1, total) * 100)
+
             local rc = false
 
             if remaining > 0 then
+                swap_node(top, "fire:permanent_flame")
                 swap_node(pos, "tigris_thermal:fire_active")
                 meta:set_string("infotext", "Active fire\n(Fuel: " .. percent .. "%)")
                 rc = true
             else
+                if minetest.get_node(top).name == "fire:permanent_flame" then
+                    minetest.remove_node(top)
+                end
                 swap_node(pos, "tigris_thermal:fire")
                 meta:set_string("infotext", "Inactive fire")
                 minetest.get_node_timer(pos):stop()
             end
 
-            meta:set_int("total", total)
-            meta:set_float("remaining", remaining)
-            meta:set_int("progress", percent)
-            fs:attach_to_node(pos)
-
+            update()
             return rc
         end,
 
         on_receive_fields = smartfs.nodemeta_on_receive_fields,
+
+        on_destruct = function(pos)
+            local top = vector.add(pos, vector.new(0, 1, 0))
+            if minetest.get_node(top).name == "fire:permanent_flame" then
+                minetest.remove_node(top)
+            end
+        end,
     }
     for k,v in pairs(a) do
         d[k] = v
@@ -118,15 +159,13 @@ minetest.register_node("tigris_thermal:fire", tn{
 })
 
 minetest.register_node("tigris_thermal:fire_active", tn{
-    light_source = 12,
     groups = {not_in_creative_inventory = 1},
 })
-
-tigris.thermal.register_heat_source("tigris_thermal:fire_active")
 
 minetest.register_craft{
     output = "tigris_thermal:fire",
     recipe = {
+        {"group:stone", "group:stick", "group:stone"},
         {"group:stone", "group:stick", "group:stone"},
         {"group:stone", "group:stone", "group:stone"},
     },
