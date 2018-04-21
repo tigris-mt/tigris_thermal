@@ -123,3 +123,11 @@ minetest.register_node("tigris_thermal:fire_active", tn{
 })
 
 tigris.thermal.register_heat_source("tigris_thermal:fire_active")
+
+minetest.register_craft{
+    output = "tigris_thermal:fire",
+    recipe = {
+        {"group:stone", "group:stick", "group:stone"},
+        {"group:stone", "group:stone", "group:stone"},
+    },
+}
