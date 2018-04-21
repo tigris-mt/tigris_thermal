@@ -3,13 +3,13 @@ tigris.thermal = m
 
 -- Limits.
 m.cold = {
-    strong = tonumber(minetest.settings:get("tigris.thermal.cold.strong")) or 0,
+    strong = tonumber(minetest.settings:get("tigris.thermal.cold.strong")) or -2,
     weak = tonumber(minetest.settings:get("tigris.thermal.cold.weak")) or 4,
 }
 
 m.hot = {
     weak = tonumber(minetest.settings:get("tigris.thermal.hot.weak")) or 29,
-    strong = tonumber(minetest.settings:get("tigris.thermal.hot.strong")) or 33,
+    strong = tonumber(minetest.settings:get("tigris.thermal.hot.strong")) or 34,
 }
 
 m.search = vector.new(8, 8, 8)
@@ -72,9 +72,8 @@ function m.at(pos)
     return t
 end
 
--- Get thermal status from pos.
-function m.status(pos)
-    local t = m.at(pos)
+-- Get thermal status from temperature.
+function m.status(t)
     return {
         cold = (t < m.cold.strong and 0.5 or 0) + (t < m.cold.weak and 0.5 or 0),
         hot = (t > m.hot.weak and 0.5 or 0) + (t > m.hot.strong and 0.5 or 0),
