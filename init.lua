@@ -12,7 +12,10 @@ m.hot = {
     strong = tonumber(minetest.settings:get("tigris.thermal.hot.strong")) or 37,
 }
 
+m.search = vector.new(8, 8, 8)
+
 m.nodes = {}
+m.nodenames = {}
 
 local seed = 0
 minetest.register_on_mapgen_init(function(params)
@@ -24,11 +27,33 @@ end)
 function m.at(pos)
     -- Base temperature.
     local t = 6
-    -- Add 14 at peak, scaled other times.
-    t = t + (14 * (0.5 - math.abs(minetest.get_timeofday() - 0.5)) * 2)
+    -- Add 10 at peak, scaled other times.
+    t = t + (10 * (0.5 - math.abs(minetest.get_timeofday() - 0.5)) * 2)
+    -- Add 4 for light level.
+    t = t + 4 * ((minetest.get_node_light(pos) or 0) / 15)
+    -- Subtract 4 for underground.
+    if pos.y < -32 then
+        t = t - 4
+    end
     -- 18 game days (6 hours IRL, with time_speed 72) compose a complete season cycle.
     -- Add 5 degrees at peak heat.
     t = t + (5 * math.abs(((minetest.get_day_count() + seed) % 18) - 9) * 2 / 18)
+
+    local env = 0
+    local env_max = 500
+    -- '1' nodes per degree.
+    local env_f = 25
+
+    local _, c = minetest.find_nodes_in_area(vector.subtract(pos, m.search), vector.add(pos, m.search),
+        m.nodenames)
+
+    for k,v in pairs(c) do
+        local anum = m.nodes[k] * v
+        env = env + anum
+    end
+
+    t = t + math.max(-env_max, math.min(env, env_max)) / env_f
+
     return t
 end
 
@@ -52,6 +77,11 @@ function m.register(node, effect)
     if effect == 0 then
         m.nodes[node] = nil
     end
+
+    m.nodenames = {}
+    for k in pairs(m.nodes) do
+        table.insert(m.nodenames, k)
+    end
 end
 
 tigris.include("player.lua")
@@ -67,8 +97,10 @@ m.register("default:desert_sand", 1)
 m.register("default:desert_stone", 1)
 m.register("default:sandstone", 1)
 m.register("default:obsidian", 1)
+m.register("default:dirt_with_dry_grass", 1)
 
 -- Cold.
+m.register("default:dirt_with_coniferous_litter", -1)
 m.register("default:dirt_with_snow", -1)
 m.register("default:silver_sand", -1)
 m.register("default:snow", -1)
