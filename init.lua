@@ -13,9 +13,11 @@ m.hot = {
 }
 
 m.search = vector.new(8, 8, 8)
+m.s_search = m.search
 
 m.nodes = {}
 m.nodenames = {}
+m.heat_sources = {}
 
 local seed = 0
 minetest.register_on_mapgen_init(function(params)
@@ -25,8 +27,18 @@ end)
 -- Get temperature information from pos.
 -- Combine nearby nodes with biome data (sun & rainfall).
 function m.at(pos)
-    local underground = pos.y < -24
+    -- Check for heat sources.
+    local t = minetest.find_nodes_in_area(vector.subtract(pos, m.s_search), vector.add(pos, m.s_search),
+        m.heat_sources)
 
+    local s_t
+
+    if #t > 0 then
+        s_t = 24
+    end
+
+    -- Underground boolean.
+    local underground = pos.y < -24
     -- Base temperature.
     local t = 6
     -- Add 10 at peak, scaled other times.
@@ -46,17 +58,19 @@ function m.at(pos)
     -- '1' nodes per degree.
     local env_f = 25
 
+    -- Check for environmental nodes.
     local _, c = minetest.find_nodes_in_area(vector.subtract(pos, m.search), vector.add(pos, m.search),
         m.nodenames)
-
     for k,v in pairs(c) do
         local anum = m.nodes[k] * v
         env = env + anum
     end
 
+    -- Environmental parameters.
     local env1 = math.max(-env_max, math.min(env, env_max)) / env_f
     local env2 = env1
 
+    -- Check biome heat data.
     if not underground then
         local b = minetest.get_biome_data(pos)
         if b then
@@ -67,7 +81,12 @@ function m.at(pos)
         end
     end
 
+    -- Average environmental parameters.
     t = t + (env1 + env2 * 2) / 3
+
+    if s_t then
+        t = (s_t * 9 + t) / 10
+    end
 
     return t
 end
@@ -98,7 +117,20 @@ function m.register(node, effect)
     end
 end
 
+function m.register_heat_source(node)
+    assert(minetest.registered_nodes[node], node .. " is not registered.")
+    table.insert(m.heat_sources, node)
+end
+
+m.register_heat_source("default:lava_source")
+m.register_heat_source("default:lava_flowing")
+if rawget(_G, "fire") then
+    m.register_heat_source("fire:basic_flame")
+    m.register_heat_source("fire:permanent_flame")
+end
+
 tigris.include("player.lua")
+tigris.include("furnace.lua")
 
 -- Register default nodes.
 
