@@ -4,12 +4,12 @@ tigris.thermal = m
 -- Limits.
 m.cold = {
     strong = tonumber(minetest.settings:get("tigris.thermal.cold.strong")) or 0,
-    weak = tonumber(minetest.settings:get("tigris.thermal.cold.weak")) or 4.4,
+    weak = tonumber(minetest.settings:get("tigris.thermal.cold.weak")) or 4,
 }
 
 m.hot = {
-    weak = tonumber(minetest.settings:get("tigris.thermal.hot.weak")) or 32,
-    strong = tonumber(minetest.settings:get("tigris.thermal.hot.strong")) or 37,
+    weak = tonumber(minetest.settings:get("tigris.thermal.hot.weak")) or 29,
+    strong = tonumber(minetest.settings:get("tigris.thermal.hot.strong")) or 33,
 }
 
 m.search = vector.new(8, 8, 8)
@@ -25,6 +25,8 @@ end)
 -- Get temperature information from pos.
 -- Combine nearby nodes with biome data (sun & rainfall).
 function m.at(pos)
+    local underground = pos.y < -24
+
     -- Base temperature.
     local t = 6
     -- Add 10 at peak, scaled other times.
@@ -32,7 +34,7 @@ function m.at(pos)
     -- Add 4 for light level.
     t = t + 4 * ((minetest.get_node_light(pos) or 0) / 15)
     -- Subtract 4 for underground.
-    if pos.y < -32 then
+    if underground then
         t = t - 4
     end
     -- 18 game days (6 hours IRL, with time_speed 72) compose a complete season cycle.
@@ -52,7 +54,20 @@ function m.at(pos)
         env = env + anum
     end
 
-    t = t + math.max(-env_max, math.min(env, env_max)) / env_f
+    local env1 = math.max(-env_max, math.min(env, env_max)) / env_f
+    local env2 = env1
+
+    if not underground then
+        local b = minetest.get_biome_data(pos)
+        if b then
+            env2 = (b.heat - 50) / 2
+            if env2 < 15 then
+                env2 = env2 * 2
+            end
+        end
+    end
+
+    t = t + (env1 + env2 * 2) / 3
 
     return t
 end
