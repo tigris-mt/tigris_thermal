@@ -6,14 +6,14 @@ local update_time = 5
 local function update(player)
     local t = tigris.thermal.at(player:getpos())
     local v = tigris.thermal.status(t)
-    tigris.hud.update("tigris_thermal:info", player, ("%.1f °C %.1f °F"):format(t, t * 1.8 + 32))
+    tigris.hud.update(player, "tigris_thermal:info", ("%.1f °C %.1f °F"):format(t, t * 1.8 + 32))
     local s = ""
     if v.cold ~= 0 then
         s = "cold"
     elseif v.hot ~= 0 then
         s = "hot"
     end
-    tigris.hud.update("tigris_thermal:status", player,
+    tigris.hud.update(player, "tigris_thermal:status",
         ((v.cold > 0.5 or v.hot > 0.5) and "very " or "") .. s)
 end
 
