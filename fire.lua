@@ -106,28 +106,27 @@ local function tn(d)
                 end
 
                 remaining = remaining - (dtime / factor)
+            else
+                update()
+                return false
             end
 
             percent = math.floor(math.max(0, remaining) / math.max(1, total) * 100)
-
-            local rc = false
 
             if remaining > 0 then
                 swap_node(top, "fire:permanent_flame")
                 swap_node(pos, "tigris_thermal:fire_active")
                 meta:set_string("infotext", "Active fire\n(Fuel: " .. percent .. "%)")
-                rc = true
             else
                 if minetest.get_node(top).name == "fire:permanent_flame" then
                     minetest.remove_node(top)
                 end
                 swap_node(pos, "tigris_thermal:fire")
                 meta:set_string("infotext", "Inactive fire")
-                minetest.get_node_timer(pos):stop()
             end
 
             update()
-            return rc
+            return true
         end,
 
         on_receive_fields = smartfs.nodemeta_on_receive_fields,
