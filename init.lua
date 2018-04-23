@@ -8,8 +8,8 @@ m.cold = {
 }
 
 m.hot = {
-    weak = tonumber(minetest.settings:get("tigris.thermal.hot.weak")) or 29,
-    strong = tonumber(minetest.settings:get("tigris.thermal.hot.strong")) or 34,
+    weak = tonumber(minetest.settings:get("tigris.thermal.hot.weak")) or 31,
+    strong = tonumber(minetest.settings:get("tigris.thermal.hot.strong")) or 38,
 }
 
 m.search = vector.new(8, 8, 8)
@@ -27,6 +27,10 @@ end)
 -- Get temperature information from pos.
 -- Combine nearby nodes with biome data (sun & rainfall).
 function m.at(pos)
+    if not minetest.get_node_or_nil(pos) then
+        return nil
+    end
+
     -- Check for heat sources.
     local t = minetest.find_nodes_in_area(vector.subtract(pos, m.s_search), vector.add(pos, m.s_search),
         m.heat_sources)

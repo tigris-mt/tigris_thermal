@@ -1,20 +1,25 @@
-tigris.hud.register("tigris_thermal:info", {type = "text"})
-tigris.hud.register("tigris_thermal:status", {type = "text"})
-
-local update_time = 5
+local update_time = 3
 
 local function update(player)
     local t = tigris.thermal.at(player:getpos())
-    local v = tigris.thermal.status(t)
-    tigris.hud.update(player, "tigris_thermal:info", ("%.1f °C %.1f °F"):format(t, t * 1.8 + 32))
-    local s = ""
-    if v.cold ~= 0 then
-        s = "cold"
-    elseif v.hot ~= 0 then
-        s = "hot"
+    if not t then
+        return
     end
-    tigris.hud.update(player, "tigris_thermal:status",
-        ((v.cold > 0.5 or v.hot > 0.5) and "very " or "") .. s)
+
+    local v = tigris.thermal.status(t)
+    if v.cold > 0 or v.hot > 0 then
+        tigris.player.effect(player, "tigris_thermal:temperature", v.cold + v.hot)
+
+        if v.hot > 0.5 then
+            tigris.player.effect(player, "tigris_thermal:very_hot", true)
+        end
+
+        tigris.damage.apply(player, {cold = v.cold})
+        tigris.damage.apply(player, {heat = v.hot})
+    else
+        tigris.player.effect(player, "tigris_thermal:temperature", false)
+        tigris.player.effect(player, "tigris_thermal:very_hot", false)
+    end
 end
 
 local timer = 0
@@ -31,3 +36,31 @@ end)
 minetest.register_on_joinplayer(function(player)
     timer = update_time
 end)
+
+tigris.player.register_effect("tigris_thermal:temperature", {
+    description = "Extreme Temperature",
+    status = true,
+    set = function(player, old, new)
+
+        local tex = "tigris_player_effect_x.png^[colorize:#FF0:200"
+        if new and new > 0.5 then
+            tex = tex .. "^(tigris_player_effect_enhance.png^[colorize:#F00:200)"
+        end
+
+        return {
+            status = tex,
+            on = not not new,
+            duration = -1,
+        }
+    end,
+})
+
+tigris.player.register_effect("tigris_thermal:very_hot", {
+    description = "Very Hot",
+    set = function(player, old, new)
+        return {
+            on = not not new,
+            duration = -1,
+        }
+    end,
+})
