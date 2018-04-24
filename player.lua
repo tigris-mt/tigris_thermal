@@ -50,7 +50,7 @@ tigris.player.register_effect("tigris_thermal:temperature", {
         return {
             status = tex,
             on = not not new,
-            duration = -1,
+            remaining = -1,
         }
     end,
 })
@@ -60,7 +60,7 @@ tigris.player.register_effect("tigris_thermal:very_hot", {
     set = function(player, old, new)
         return {
             on = not not new,
-            duration = -1,
+            remaining = -1,
         }
     end,
 })
