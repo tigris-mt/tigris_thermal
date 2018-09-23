@@ -8,7 +8,7 @@ m.cold = {
 }
 
 m.hot = {
-    weak = tonumber(minetest.settings:get("tigris.thermal.hot.weak")) or 31,
+    weak = tonumber(minetest.settings:get("tigris.thermal.hot.weak")) or 33,
     strong = tonumber(minetest.settings:get("tigris.thermal.hot.strong")) or 38,
 }
 
@@ -79,9 +79,6 @@ function m.at(pos)
         local b = minetest.get_biome_data(pos)
         if b then
             env2 = (b.heat - 50) / 2
-            if env2 < 15 then
-                env2 = env2 * 2
-            end
         end
     end
 
@@ -154,10 +151,6 @@ m.register("default:dirt_with_coniferous_litter", -1)
 m.register("default:dirt_with_snow", -1)
 m.register("default:silver_sand", -1)
 m.register("default:snow", -1)
-m.register("default:water_source", -1)
-m.register("default:water_flowing", -1)
-m.register("default:river_water_source", -1)
-m.register("default:river_water_flowing", -1)
 
 -- Very cold.
 m.register("default:snowblock", -2)

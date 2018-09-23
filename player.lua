@@ -8,7 +8,7 @@ local function update(player)
 
     local v = tigris.thermal.status(t)
     if v.cold > 0 or v.hot > 0 then
-        tigris.player.effect(player, "tigris_thermal:temperature", v.cold + v.hot)
+        tigris.player.effect(player, "tigris_thermal:temperature", {s = v.cold + v.hot, t = t})
 
         if v.hot > 0.5 then
             tigris.player.effect(player, "tigris_thermal:very_hot", true)
@@ -17,7 +17,7 @@ local function update(player)
         tigris.damage.apply(player, {cold = v.cold})
         tigris.damage.apply(player, {heat = v.hot})
     else
-        tigris.player.effect(player, "tigris_thermal:temperature", false)
+        tigris.player.effect(player, "tigris_thermal:temperature", {s = false, t = t})
         tigris.player.effect(player, "tigris_thermal:very_hot", false)
     end
 end
@@ -41,6 +41,8 @@ tigris.player.register_effect("tigris_thermal:temperature", {
     description = "Extreme Temperature",
     status = true,
     set = function(player, old, new)
+        local t = new.t
+        local new = new.s
 
         local tex = "tigris_player_effect_x.png^[colorize:#FF0:200"
         if new and new > 0.5 then
@@ -51,6 +53,7 @@ tigris.player.register_effect("tigris_thermal:temperature", {
             status = tex,
             on = not not new,
             remaining = -1,
+            text = ("%d"):format(t),
         }
     end,
 })
